@@ -1,0 +1,41 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.3.6-management
+    container_name: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - red-emisor
+
+  emisor-app:
+    build: ./emisor
+    container_name: spring-emisor-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - sqlite_data:/data
+    environment:
+      # Dentro de la red de Docker el host es el nombre del servicio
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - SPRING_DATASOURCE_URL=jdbc:sqlite:/data/miapp.db
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.sqlite.JDBC
+      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.community.dialect.SQLiteDialect
+      - SPRING_JPA_HIBERNATE_DDL-AUTO=update
+    networks:
+      - red-emisor
+
+volumes:
+  sqlite_data:
+
+networks:
+  red-emisor:
+    driver: bridge
